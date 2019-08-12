@@ -1,6 +1,15 @@
 const Alexa = require('ask-sdk-core');
 const ytdl = require('ytdl-core');
 
+let videoID='9bZkp7q19f0'
+ytdl.getInfo(videoID, (err, info) => {
+  if (err) throw err;
+  let format = ytdl.chooseFormat(info.formats, { quality: '140' });
+  if (format) {
+    console.log(format.url);
+  }
+});
+
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return handlerInput.requestEnvelope.request.type === 'LaunchRequest'

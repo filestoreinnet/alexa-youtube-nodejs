@@ -20,10 +20,14 @@ const SearchIntentHandler = {
             && handlerInput.requestEnvelope.request.intent.name === 'SearchIntent';
     },
     handle(handlerInput) {
-        let speechText;
-        speechText="Hello!"
+        const speechText='Playing some audio';
+        const playBehavior='REPLACE_ALL';
+        const url='https://d1le29qyzha1u4.cloudfront.net/AWS_Podcast_Episode_327.mp3';
+        const token='a';
+        const offset=0;
         return handlerInput.responseBuilder
             .speak(speechText)
+            .addAudioPlayerPlayDirective(playBehavior,url,token,offset)
             .getResponse();
     }
 };

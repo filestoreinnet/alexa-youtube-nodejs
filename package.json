@@ -1,16 +1,17 @@
 {
-  "name": "hello-world",
-  "version": "0.9.0",
-  "description": "alexa utility for quickly building skills",
+  "name": "alexa-youtube-nodejs",
+  "version": "1.0",
+  "description": "Alexa skill to play audio from YouTube videos",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Amazon Alexa",
+  "author": "Mark",
   "license": "ISC",
   "dependencies": {
-    "ask-sdk-core": "^2.0.7",
-    "ask-sdk-model": "^1.4.1",
-    "aws-sdk": "^2.326.0"
+    "ask-sdk-core": "^2.7.0",
+    "ask-sdk-model": "^1.18.0",
+    "aws-sdk": "^2.326.0",
+    "ytdl-core": "^0.29.5"
   }
 }

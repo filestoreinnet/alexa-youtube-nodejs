@@ -1,4 +1,5 @@
 const Alexa = require('ask-sdk-core');
+const ytdl = require('ytdl-core');
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {

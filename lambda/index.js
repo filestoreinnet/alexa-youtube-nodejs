@@ -2,17 +2,24 @@ const Alexa = require('ask-sdk-core');
 const ytdl = require('ytdl-core');
 const testVideoID = '9bZkp7q19f0';
 
+//import dev key
+let DEVELOPER_KEY = '';
+try {
+    DEVELOPER_KEY = require('./DEVELOPER_KEY.js');
+} catch(e) {
+    DEVELOPER_KEY = '';
+}
+
 //For testing locally with node index.js
 if (require.main === module) {
 	getURLAndTitle(testVideoID,(url,title) => {
 		console.log(title);
-		console.log(url);
 	});
 }
 
 async function getURLAndTitle(videoID, callback) {
     let info = await ytdl.getInfo(videoID);
-    let title = info.title
+    let title = DEVELOPER_KEY //info.title
     let format = ytdl.chooseFormat(info.formats, { quality: '140' });
     if (format) {
         let url = format.url;

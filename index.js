@@ -65,6 +65,7 @@ const CancelAndStopIntentHandler = {
         const speechText = 'Goodbye!';
         return handlerInput.responseBuilder
             .speak(speechText)
+            .addAudioPlayerStopDirective()
             .getResponse();
     }
 };

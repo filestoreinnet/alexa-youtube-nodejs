@@ -99,6 +99,7 @@ const LaunchRequestHandler = {
                 && getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent');
     },
     handle(handlerInput) {
+        const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
         const speechText = requestAttributes.t('WELCOME');
         return handlerInput.responseBuilder
             .speak(speechText)
@@ -118,6 +119,7 @@ const SearchIntentHandler = {
             youtubeSearch(query, (id) => {
                 console.log(id);
                 getURLAndTitle(id,(url, title) => {
+                    const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
                     const speechText= requestAttributes.t('PLAYING', title);
                     const playBehavior='REPLACE_ALL';
                     const token='a';
@@ -139,6 +141,7 @@ const CancelAndStopIntentHandler = {
                 || getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
+        const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
         const speechText = requestAttributes.t('GOODBYE');
         return handlerInput.responseBuilder
             .speak(speechText)
@@ -160,6 +163,7 @@ const ErrorHandler = {
         return true;
     },
     handle(handlerInput, error) {
+        const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
         console.log(`~~~~ Error handled: ${error.message}`);
         const speechText = requestAttributes.t('DONT_UNDERSTAND');
         return handlerInput.responseBuilder

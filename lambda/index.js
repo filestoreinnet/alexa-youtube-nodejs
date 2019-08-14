@@ -1,4 +1,10 @@
-const Alexa = require('ask-sdk-core');
+const {
+    SkillBuilders,
+    getRequestType,
+    getIntentName,
+    getSlotValue,
+    getDialogState,
+} = require('ask-sdk-core');
 const ytdl = require('ytdl-core');
 const request = require('request');
 
@@ -26,8 +32,9 @@ if (require.main === module) {
 }
 
 async function youtubeSearch(query, callback) {
-    const url='https://www.googleapis.com/youtube/v3/search?part=id&q='+query+'&key='+DEVELOPER_KEY;
+    const url='https://www.googleapis.com/youtube/v3/search?part=id&type=video&q='+query+'&key='+DEVELOPER_KEY;
     let id = await request(url, { json: true },  (err, res, body) => {
+        if (err) {console.log(err)}
         callback(res.body.items[0].id.videoId);
     });
 }
@@ -44,12 +51,12 @@ async function getURLAndTitle(videoID, callback) {
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
-        return handlerInput.requestEnvelope.request.type === 'LaunchRequest'
-            || (handlerInput.requestEnvelope.request.type === 'IntentRequest'
-                && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.HelpIntent');
+        return getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest'
+            || (getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+                && getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent');
     },
     handle(handlerInput) {
-        const speechText = 'Hi there. What is your name?';
+        const speechText = 'Welcome to YouTube. What video would you like to play?';
         return handlerInput.responseBuilder
             .speak(speechText)
             .reprompt(speechText)
@@ -58,12 +65,15 @@ const LaunchRequestHandler = {
 };
 const SearchIntentHandler = {
     canHandle(handlerInput) {
-        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-            && handlerInput.requestEnvelope.request.intent.name === 'SearchIntent';
+        return getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && getIntentName(handlerInput.requestEnvelope) === 'SearchIntent';
     },
     handle(handlerInput) {
+        const query = getSlotValue(handlerInput.requestEnvelope, 'query');
+        console.log(query);
         return new Promise((resolve) => {
-            youtubeSearch(testQuery, (id) => {
+            youtubeSearch(query, (id) => {
+                console.log(id);
                 getURLAndTitle(id,(url, title) => {
                     const speechText='Playing '+title;
                     const playBehavior='REPLACE_ALL';
@@ -81,9 +91,9 @@ const SearchIntentHandler = {
 };
 const CancelAndStopIntentHandler = {
     canHandle(handlerInput) {
-        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-            && (handlerInput.requestEnvelope.request.intent.name === 'AMAZON.CancelIntent'
-                || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.StopIntent');
+        return getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && (getIntentName(handlerInput.requestEnvelope) === 'AMAZON.CancelIntent'
+                || getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
         const speechText = 'Goodbye!';
@@ -95,7 +105,7 @@ const CancelAndStopIntentHandler = {
 };
 const SessionEndedRequestHandler = {
     canHandle(handlerInput) {
-        return handlerInput.requestEnvelope.request.type === 'SessionEndedRequest';
+        return getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
     },
     handle(handlerInput) {
         return handlerInput.responseBuilder.getResponse();
@@ -116,7 +126,7 @@ const ErrorHandler = {
     }
 };
 
-exports.handler = Alexa.SkillBuilders.custom()
+exports.handler = SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         SearchIntentHandler,

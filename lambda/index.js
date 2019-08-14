@@ -7,15 +7,58 @@ const {
 } = require('ask-sdk-core');
 const ytdl = require('ytdl-core');
 const request = require('request');
+const i18n = require('i18next'); 
+const sprintf = require('i18next-sprintf-postprocessor'); 
 
-
-// Insert Google dev key here, or in a file called DEVELOPER_KEY.js
+// THINGS TO CONFIGURE FOR THE SKILL TO WORK
+// Google Dev Key
 let DEVELOPER_KEY = '';
 try {
     DEVELOPER_KEY = require('./DEVELOPER_KEY.js');
 } catch(e) {
     // Ignore if file not there
 }
+
+const languageStrings = {
+    'en' : require('./i18n/en'),
+    'fr' : require('./i18n/fr')
+}
+
+// inside the index.js
+const LocalizationInterceptor = {
+    process(handlerInput) {
+        const localizationClient = i18n.use(sprintf).init({
+            lng: handlerInput.requestEnvelope.request.locale,
+            fallbackLng: 'en', // fallback to EN if locale doesn't exist
+            resources: languageStrings
+        });
+
+        localizationClient.localize = function () {
+            const args = arguments;
+            let values = [];
+
+            for (var i = 1; i < args.length; i++) {
+                values.push(args[i]);
+            }
+            const value = i18n.t(args[0], {
+                returnObjects: true,
+                postProcess: 'sprintf',
+                sprintf: values
+            });
+
+            if (Array.isArray(value)) {
+                return value[Math.floor(Math.random() * value.length)];
+            } else {
+                return value;
+            }
+        }
+
+        const attributes = handlerInput.attributesManager.getRequestAttributes();
+        attributes.t = function (...args) { // pass on arguments to the localizationClient
+            return localizationClient.localize(...args);
+        };
+    },
+};
 
 const testVideoID = '9bZkp7q19f0';
 const testQuery = 'gangnam style'
@@ -56,7 +99,7 @@ const LaunchRequestHandler = {
                 && getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent');
     },
     handle(handlerInput) {
-        const speechText = 'Welcome to YouTube. What video would you like to play?';
+        const speechText = requestAttributes.t('WELCOME');
         return handlerInput.responseBuilder
             .speak(speechText)
             .reprompt(speechText)
@@ -75,7 +118,7 @@ const SearchIntentHandler = {
             youtubeSearch(query, (id) => {
                 console.log(id);
                 getURLAndTitle(id,(url, title) => {
-                    const speechText='Playing '+title;
+                    const speechText= requestAttributes.t('PLAYING', title);
                     const playBehavior='REPLACE_ALL';
                     const token='a';
                     const offset=0;
@@ -96,7 +139,7 @@ const CancelAndStopIntentHandler = {
                 || getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
-        const speechText = 'Goodbye!';
+        const speechText = requestAttributes.t('GOODBYE');
         return handlerInput.responseBuilder
             .speak(speechText)
             .addAudioPlayerStopDirective()
@@ -118,7 +161,7 @@ const ErrorHandler = {
     },
     handle(handlerInput, error) {
         console.log(`~~~~ Error handled: ${error.message}`);
-        const speechText = `Sorry, I couldn't understand what you said. Please try again.`;
+        const speechText = requestAttributes.t('DONT_UNDERSTAND');
         return handlerInput.responseBuilder
             .speak(speechText)
             .reprompt(speechText)
@@ -132,6 +175,7 @@ exports.handler = SkillBuilders.custom()
         SearchIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler)
+	.addRequestInterceptors(LocalizationInterceptor)
     .addErrorHandlers(
         ErrorHandler)
     .lambda();

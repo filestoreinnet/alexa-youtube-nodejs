@@ -9,6 +9,7 @@ const ytdl = require('ytdl-core');
 const request = require('request');
 const i18n = require('i18next'); 
 const sprintf = require('i18next-sprintf-postprocessor'); 
+const ytSearch = require( 'yt-search' );
 
 // THINGS TO CONFIGURE FOR THE SKILL TO WORK
 // Google Dev Key
@@ -75,10 +76,17 @@ if (require.main === module) {
 }
 
 async function youtubeSearch(query, callback) {
-    const url='https://www.googleapis.com/youtube/v3/search?part=id&type=video&q='+query+'&key='+DEVELOPER_KEY;
-    let id = await request(url, { json: true },  (err, res, body) => {
-        if (err) {console.log(err)}
-        callback(res.body.items[0].id.videoId);
+    ytSearch( query, function ( err, r ) {
+          if ( err ) throw err
+         
+          const videos = r.videos
+          const playlists = r.playlists
+          const accounts = r.accounts
+         
+          const firstResult = videos[ 0 ].videoId
+         
+    callback(firstResult);
+    
     });
 }
 

@@ -11,15 +11,6 @@ const i18n = require('i18next');
 const sprintf = require('i18next-sprintf-postprocessor'); 
 const ytSearch = require( 'yt-search' );
 
-// THINGS TO CONFIGURE FOR THE SKILL TO WORK
-// Google Dev Key
-let DEVELOPER_KEY = '';
-try {
-    DEVELOPER_KEY = require('./DEVELOPER_KEY.js');
-} catch(e) {
-    // Ignore if file not there
-}
-
 const languageStrings = {
     'en' : require('./i18n/en'),
     'fr' : require('./i18n/fr')
@@ -66,7 +57,6 @@ const testQuery = 'gangnam style'
 
 //For testing locally with node index.js
 if (require.main === module) {
-    //console.log(DEVELOPER_KEY);
     //getURLAndTitle(testVideoID,(url,title) => {
     //    console.log(title);
     //});

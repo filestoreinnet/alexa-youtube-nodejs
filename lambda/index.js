@@ -92,13 +92,18 @@ function convert_object_to_token(object) {
 }
 
 async function getURLAndTitle(videoID, callback) {
-    let info = await ytdl.getInfo(videoID);
-    let title = info.title
-    let format = ytdl.chooseFormat(info.formats, { quality: '140' });
-    if (format) {
-        let url = format.url;
-        callback(url, title);
-    }
+    let info = await ytdl.getInfo(videoID, (err, info) => {
+        if (err) {
+            console.log(err)
+            return callback('https://google.com','error getting info')
+        }
+        let title = info.title
+        let format = ytdl.chooseFormat(info.formats, { quality: '140' });
+        if (format) {
+            let url = format.url;
+            callback(url, title);
+        }
+    });
 }
 
 const LaunchRequestHandler = {

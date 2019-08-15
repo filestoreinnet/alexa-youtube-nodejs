@@ -67,17 +67,28 @@ if (require.main === module) {
 
 async function youtubeSearch(query, callback) {
     ytSearch( query, function ( err, r ) {
-          if ( err ) throw err
-         
-          const videos = r.videos
-          const playlists = r.playlists
-          const accounts = r.accounts
-         
-          const firstResult = videos[ 0 ].videoId
-         
-    callback(firstResult);
-    
+        if ( err ) throw err
+        const videos = r.videos
+        const playlists = r.playlists
+        const accounts = r.accounts
+        const firstResult = videos[0].videoId
+        let playlist={'p':0};
+        console.log('length: '+videos.length)
+        for (let i=0; i<10; i++) {
+            playlist['v'+i]=videos[i].videoId
+        }
+        console.log(playlist);
+        callback(firstResult, playlist);
     });
+}
+
+function convert_object_to_token(object) {
+    let token;
+    for (const [key, val] of Object.entries(object)) {
+        let pair = [key,val].join('=')
+        token = [token, pair].filter(Boolean).join('&')
+    }
+    return token;
 }
 
 async function getURLAndTitle(videoID, callback) {
@@ -114,14 +125,14 @@ const SearchIntentHandler = {
         const query = getSlotValue(handlerInput.requestEnvelope, 'query');
         console.log(query);
         return new Promise((resolve) => {
-            youtubeSearch(query, (id) => {
+            youtubeSearch(query, (id, playlist) => {
                 console.log(id);
                 getURLAndTitle(id,(url, title) => {
                     const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
-                    const speechText= requestAttributes.t('PLAYING', title);
-                    const playBehavior='REPLACE_ALL';
-                    const token='a';
-                    const offset=0;
+                    const speechText = requestAttributes.t('PLAYING', title);
+                    const playBehavior = 'REPLACE_ALL';
+                    const offset = 0;
+                    const token = convert_object_to_token(playlist);
                     resolve(handlerInput.responseBuilder
                         .speak(speechText)
                         .addAudioPlayerPlayDirective(playBehavior,url,token,offset)

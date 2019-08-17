@@ -57,7 +57,7 @@ const testQuery = 'gangnam style'
 
 //For testing locally with node index.js
 if (require.main === module) {
-    //getURLAndTitle(testVideoID,(url,title) => {
+    //get_url_and_title(testVideoID,(url,title) => {
     //    console.log(title);
     //});
     youtubeSearch(testQuery, (id) => {
@@ -91,7 +91,35 @@ function convert_object_to_token(object) {
     return token;
 }
 
-async function getURLAndTitle(videoID, callback) {
+function convert_token_to_dict(token) {
+    let pi=token.split('&')
+    let playlist={}
+    for (let i=0; i<pi.length; i++) {
+        let key=pi[i].split('=')[0]
+        let val=pi[i].split('=')[1]
+        playlist[key]=val
+    }
+    return playlist
+}
+
+async function get_next_url_and_token(current_token, skip, callback) {
+    let playlist = convert_token_to_dict(current_token)
+    let next_playing = playlist['p']
+    let next_token;
+    next_playing += skip
+    playlist['p'] = next_playing
+    let next_key = 'v'+next_playing
+    let next_id = playlist[next_key]
+    await get_url_and_title(next_id, (url,title) => {
+        console.log(url);
+        if (url) {
+            next_token = convert_object_to_token(playlist)
+            return callback(url, next_token, title)
+        }
+    })
+}
+
+async function get_url_and_title(videoID, callback) {
     let info = await ytdl.getInfo(videoID, (err, info) => {
         if (err) {
             console.log(err)
@@ -132,7 +160,7 @@ const SearchIntentHandler = {
         return new Promise((resolve) => {
             youtubeSearch(query, (id, playlist) => {
                 console.log(id);
-                getURLAndTitle(id,(url, title) => {
+                get_url_and_title(id,(url, title) => {
                     const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
                     const speechText = requestAttributes.t('PLAYING', title);
                     const playBehavior = 'REPLACE_ALL';
@@ -148,11 +176,36 @@ const SearchIntentHandler = {
         });
     }
 };
+const ResumeHandler = {
+    canHandle(handlerInput) {
+        return getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && getIntentName(handlerInput.requestEnvelope) === 'AMAZON.ResumeIntent';
+    },
+    handle(handlerInput) {
+        let next_url;
+        let next_token;
+        let title;
+        const token = handlerInput.requestEnvelope.context.AudioPlayer.token;
+        if (!token) { return LaunchRequestHandler.handle(handlerInput) }
+        const speechText = 'Resuming'
+        const playBehavior = 'REPLACE_ALL';
+        const offsetInMilliseconds = handlerInput.requestEnvelope.context.AudioPlayer.offsetInMilliseconds
+        return new Promise((resolve) => {
+            get_next_url_and_token(token, 0, (next_url, next_token, title) => {
+                resolve(handlerInput.responseBuilder
+                .speak(speechText)
+                .addAudioPlayerPlayDirective(playBehavior,next_url,next_token,offsetInMilliseconds)
+                .getResponse())
+            })
+        })
+    }
+}
 const CancelAndStopIntentHandler = {
     canHandle(handlerInput) {
         return getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && (getIntentName(handlerInput.requestEnvelope) === 'AMAZON.CancelIntent'
-                || getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
+                || getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent'
+                || getIntentName(handlerInput.requestEnvelope) === 'AMAZON.PauseIntent');
     },
     handle(handlerInput) {
         const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
@@ -163,6 +216,7 @@ const CancelAndStopIntentHandler = {
             .getResponse();
     }
 };
+
 const SessionEndedRequestHandler = {
     canHandle(handlerInput) {
         return getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
@@ -192,6 +246,7 @@ exports.handler = SkillBuilders.custom()
         LaunchRequestHandler,
         SearchIntentHandler,
         CancelAndStopIntentHandler,
+        ResumeHandler,
         SessionEndedRequestHandler)
 	.addRequestInterceptors(LocalizationInterceptor)
     .addErrorHandlers(
